@@ -1,0 +1,100 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html { transition: background-color 0.3s, color 0.3s; }
+
+  body {
+    @apply min-h-screen antialiased text-slate-800;
+    background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 60%, #f5f3ff 100%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    color: white;
+    background: #0a0f1e;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(59,130,246,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at top right, rgba(139,92,246,0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom center, rgba(16,185,129,0.1) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.4); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.7); }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);
+  }
+  .dark .glass {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  .input-field {
+    background: rgba(255,255,255,0.9);
+    border: 1.5px solid rgba(0,0,0,0.1);
+    color: #0f172a;
+    transition: all 0.2s ease;
+  }
+  .input-field::placeholder { color: rgba(0,0,0,0.35); }
+  .input-field:focus { outline: none; background: white; border-color: rgba(99,102,241,0.7); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+  .input-field option { background: white; color: #0f172a; }
+
+  .dark .input-field { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: white; }
+  .dark .input-field::placeholder { color: rgba(255,255,255,0.4); }
+  .dark .input-field:focus { background: rgba(255,255,255,0.12); }
+  .dark .input-field option { background: #1e293b; color: white; }
+
+  .chip-inactive {
+    background: rgba(0,0,0,0.04);
+    border: 1.5px solid rgba(0,0,0,0.1);
+    color: rgba(0,0,0,0.65);
+    transition: all 0.2s ease;
+  }
+  .chip-inactive:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.3); color: #4338ca; transform: translateY(-1px); }
+
+  .dark .chip-inactive { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+  .dark .chip-inactive:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); color: white; transform: translateY(-1px); }
+
+  .chip-active {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    border: 1.5px solid rgba(99,102,241,0.5);
+    color: white;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+    box-shadow: 0 4px 24px rgba(99,102,241,0.5), 0 1px 0 rgba(255,255,255,0.2) inset;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.7); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 50%, #7c3aed 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .dark .text-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #818cf8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-float { animation: float 4s ease-in-out infinite; }
+  .animate-fade-slide-up { animation: fadeSlideUp 0.6s cubic-bezier(0.4,0,0.2,1) both; }
+}
