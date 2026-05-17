@@ -38,14 +38,19 @@ export const calculateChances = (userRank, closingRank) => {
 };
 
 // Main prediction engine
-export const predictColleges = (data, filters) => {
-  const { rank, category, gender, quota, instituteTypes, branches } = filters;
+export const predictColleges = (data, filters, activeTool = 'jee-mains') => {
+  const { rank, category, gender, quota, instituteTypes, branches, isPwd } = filters;
   const userRank = parseInt(rank, 10);
   if (isNaN(userRank)) return [];
 
   const filtered = data.filter((item) => {
+    // Exclude B.Arch and B.Planning as they require JEE Main Paper 2
+    const progUpper = item["Academic Program Name"].toUpperCase();
+    if (progUpper.includes("ARCHITECTURE") || progUpper.includes("PLANNING")) return false;
+
     // 1. Category / Seat Type Match
-    if (item["Seat Type"] !== category) return false;
+    const targetSeatType = isPwd ? `${category} (PwD)` : category;
+    if (item["Seat Type"] !== targetSeatType) return false;
 
     // 2. Gender Match
     if (item["Gender"] !== gender) return false;
@@ -59,19 +64,27 @@ export const predictColleges = (data, filters) => {
 
     // 4. Institute Type Match
     const instType = getInstituteType(item["Institute"]);
-    if (!instituteTypes.includes("ALL") && !instituteTypes.includes(instType)) return false;
+
+    if (activeTool === 'jee-advance') {
+      // JEE Advance: show IITs only
+      if (instType !== "IIT") return false;
+    } else {
+      // JEE Mains: exclude IITs (they require JEE Advanced)
+      if (instType === "IIT") return false;
+      if (!instituteTypes.includes("ALL") && !instituteTypes.includes(instType)) return false;
+    }
 
     // 5. Branch Preference Match
     if (!matchesBranch(item["Academic Program Name"], branches)) return false;
 
-    // 6. Rank Proximity (Between Opening - 20% and Closing + 20%)
-    const openRank = parseInt(item["Opening Rank"], 10);
+    // 6. Rank Proximity (Closing + 20%)
+    // If the user's rank is much better (lower) than the opening rank, they still get it, so we only check the upper bound.
     const closeRank = parseInt(item["Closing Rank"], 10);
     
     // Ignore rows with invalid ranks (like "50P" for PwD) if standard integer check fails
-    if (isNaN(openRank) || isNaN(closeRank)) return false;
+    if (isNaN(closeRank)) return false;
 
-    if (userRank < openRank * 0.8 || userRank > closeRank * 1.2) return false;
+    if (userRank > closeRank * 1.2) return false;
 
     return true;
   });

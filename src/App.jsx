@@ -2,86 +2,113 @@ import React, { useState, useEffect } from 'react';
 import PredictorForm from './components/PredictorForm';
 import ResultsTable from './components/ResultsTable';
 import { predictColleges } from './utils/predictionLogic';
-import { GraduationCap, Sun, Moon, AlertCircle, CheckCircle, Zap, Target } from 'lucide-react';
+import { predictAKTU } from './utils/aktupredictionLogic';
+import { GraduationCap, Sun, Moon, AlertCircle, FileText, Search, ChevronUp, ChevronDown } from 'lucide-react';
+
+
 
 function App() {
-  const [data, setData] = useState(null);
+  const [josaaData, setJosaaData] = useState(null);
+  const [aktuData, setAktuData] = useState(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isPredicting, setIsPredicting] = useState(false);
   const [results, setResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
+  const [activeTool, setActiveTool] = useState('jee-mains');
 
   const [filters, setFilters] = useState({
     rank: '', category: 'OPEN', gender: 'Gender-Neutral',
-    quota: 'Both', instituteTypes: ['ALL'], branches: ['ALL']
+    quota: 'Both', instituteTypes: ['ALL'], branches: ['ALL'], isPwd: false
   });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
 
+  // Clear results when switching tools to prevent showing stale data
   useEffect(() => {
-    fetch('/josaa_cutoffs.json')
-      .then(res => res.json())
-      .then(jsonData => { setData(jsonData); setIsDataLoading(false); })
+    setResults([]);
+    setHasSearched(false);
+  }, [activeTool]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/josaa_cutoffs.json').then(res => res.json()),
+      fetch('/aktu_cutoffs.json').then(res => res.json())
+    ])
+      .then(([josaa, aktu]) => {
+        setJosaaData(josaa);
+        setAktuData(aktu);
+        setIsDataLoading(false);
+      })
       .catch(() => setIsDataLoading(false));
   }, []);
 
   const handlePredict = () => {
-    if (!data) return;
+    if (activeTool !== 'aktu' && !josaaData) return;
+    if (activeTool === 'aktu' && !aktuData) return;
+
     setIsPredicting(true);
     setTimeout(() => {
-      const predictions = predictColleges(data, filters);
+      let predictions = [];
+      if (activeTool === 'aktu') {
+        predictions = predictAKTU(aktuData, filters);
+      } else {
+        predictions = predictColleges(josaaData, filters, activeTool);
+      }
       setResults(predictions); setHasSearched(true); setIsPredicting(false);
     }, 150);
   };
 
-  const safeCount = results.filter(r => r.Chances === 'SAFE').length;
-  const moderateCount = results.filter(r => r.Chances === 'MODERATE').length;
-  const reachCount = results.filter(r => r.Chances === 'REACH').length;
-
   return (
-    <div className="relative min-h-screen">
-      {/* Orbs — dark only */}
+    <div className="relative min-h-screen flex flex-col">
+      {/* Dark mode orbs */}
       {isDark && <>
         <div className="orb w-96 h-96 bg-blue-600/20 top-[-100px] left-[-100px]" />
         <div className="orb w-80 h-80 bg-violet-600/15 top-[100px] right-[-80px]" />
         <div className="orb w-64 h-64 bg-emerald-500/10 bottom-[200px] left-[30%]" />
       </>}
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+      {/* ── TOP NAVIGATION ── */}
+      <nav className="relative z-20 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
 
-        {/* Toggle button */}
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={() => setIsDark(prev => !prev)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 font-medium text-sm
-              dark:bg-white/10 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/15
-              bg-white/80 border-slate-200 text-slate-600 hover:bg-white shadow-sm"
-          >
-            {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
-            {isDark ? 'Light Mode' : 'Dark Mode'}
-          </button>
-        </div>
-
-        {/* Header */}
-        <header className="text-center mb-14 animate-fade-slide-up">
-          <div className="flex items-center justify-center mb-5">
-            <div className="relative animate-float">
-              <div className="absolute inset-0 bg-blue-500/40 rounded-3xl blur-xl" />
-              <div className="relative bg-gradient-to-br from-blue-500 to-violet-600 p-5 rounded-3xl border border-white/20 shadow-2xl">
-                <GraduationCap className="w-12 h-12 text-white" />
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-2 rounded-xl shadow-sm">
+                <GraduationCap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="font-black text-xl text-gradient">Rank2College</span>
               </div>
             </div>
+
+            {/* Tool Tabs removed from navbar — now inside form */}
+
+            {/* Dark / Light toggle */}
+            <button onClick={() => setIsDark(prev => !prev)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300 font-medium text-sm
+                dark:bg-white/10 dark:border-white/20 dark:text-white/80 dark:hover:bg-white/15
+                bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">
+              {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-blue-500" />}
+              <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+            </button>
           </div>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-4">
-            <span className="text-gradient">Rank2College</span>
+
+          {/* Mobile tool tabs removed from navbar */}
+        </div>
+      </nav>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+
+        {/* Page Hero */}
+        <header className="text-center mb-12 animate-fade-slide-up">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">
+            Find Your Best <span className="text-gradient">College Options</span>
           </h1>
-          <p className="text-slate-500 dark:text-white/60 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            Enter your rank and instantly discover your best college options across
-            <span className="text-slate-700 dark:text-white/90 font-semibold"> NITs, IIITs &amp; GFTIs</span>
-          </p>
         </header>
 
         {/* Loading */}
@@ -96,37 +123,40 @@ function App() {
           </div>
         ) : (
           <main className="space-y-6 animate-fade-slide-up" style={{ animationDelay: '0.1s' }}>
-            <PredictorForm filters={filters} setFilters={setFilters} onPredict={handlePredict} isLoading={isPredicting} />
-
-            {/* Summary cards */}
-            {hasSearched && results.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: 'Safe', count: safeCount, Icon: CheckCircle, bg: 'bg-emerald-500/10 dark:bg-emerald-500/10', border: 'border-emerald-400/30', text: 'text-emerald-600 dark:text-emerald-400', iconColor: 'text-emerald-500' },
-                  { label: 'Moderate', count: moderateCount, Icon: Zap, bg: 'bg-amber-500/10', border: 'border-amber-400/30', text: 'text-amber-600 dark:text-amber-400', iconColor: 'text-amber-500' },
-                  { label: 'Reach', count: reachCount, Icon: Target, bg: 'bg-rose-500/10', border: 'border-rose-400/30', text: 'text-rose-600 dark:text-rose-400', iconColor: 'text-rose-500' },
-                ].map(({ label, count, Icon, bg, border, text, iconColor }) => (
-                  <div key={label} className={`${bg} border ${border} rounded-2xl p-4 md:p-6 text-center backdrop-blur-sm`}>
-                    <Icon className={`w-6 h-6 mx-auto mb-2 ${iconColor}`} />
-                    <div className={`text-3xl md:text-4xl font-black ${text}`}>{count}</div>
-                    <div className="text-slate-500 dark:text-white/60 text-sm font-medium mt-1">{label} Colleges</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <PredictorForm filters={filters} setFilters={setFilters} onPredict={handlePredict} isLoading={isPredicting} activeTool={activeTool} setActiveTool={setActiveTool} />
 
             <ResultsTable results={results} hasSearched={hasSearched} />
           </main>
         )}
-
-        {/* Footer */}
-        <footer className="text-center mt-16 pb-8">
-          <div className="inline-flex items-center gap-2 text-slate-400 dark:text-white/30 text-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 py-3 px-6 rounded-full">
-            <AlertCircle className="w-3.5 h-3.5" />
-            Predictions based on historical JoSAA 2025 data. Actual cutoffs may vary.
-          </div>
-        </footer>
       </div>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-1.5 rounded-lg">
+                <GraduationCap className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="font-black text-slate-800 dark:text-white">Rank2College</span>
+              </div>
+            </div>
+
+
+            {/* Links */}
+            <div className="flex items-center gap-4">
+              <a href="https://github.com/Kartikey9936/rank2college" target="_blank" rel="noopener noreferrer"
+                className="text-slate-400 dark:text-white/30 hover:text-slate-700 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+              </a>
+              <span className="text-slate-300 dark:text-white/10 text-xs">© 2025 Rank2College</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

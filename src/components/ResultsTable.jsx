@@ -17,7 +17,6 @@ const TAB_ACTIVE = {
 };
 
 export default function ResultsTable({ results, hasSearched }) {
-  const [activeTab, setActiveTab] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'Closing Rank', direction: 'asc' });
 
@@ -27,7 +26,6 @@ export default function ResultsTable({ results, hasSearched }) {
 
   const filtered = useMemo(() => {
     let data = [...results];
-    if (activeTab !== 'ALL') data = data.filter(i => i.Chances === activeTab);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       data = data.filter(i => i.Institute.toLowerCase().includes(q) || i['Academic Program Name'].toLowerCase().includes(q));
@@ -40,15 +38,15 @@ export default function ResultsTable({ results, hasSearched }) {
       return 0;
     });
     return data;
-  }, [results, activeTab, searchQuery, sortConfig]);
+  }, [results, searchQuery, sortConfig]);
 
   const downloadPDF = () => {
     if (!filtered.length) return;
     const doc = new jsPDF();
     doc.setFontSize(20); doc.setTextColor(37, 99, 235);
-    doc.text('Rank2College Priority List', 14, 22);
+    doc.text('Rank2College.com Priority List', 14, 22);
     doc.setFontSize(10); doc.setTextColor(100, 116, 139);
-    doc.text('Generated from JoSAA 2025 Round 5 Cutoffs', 14, 30);
+
     autoTable(doc, {
       head: [['Institute', 'Branch', 'Quota', 'Category', 'Closing Rank', 'Chances']],
       body: filtered.map(i => [i.Institute, i['Academic Program Name'].split('(')[0].trim(), i.Quota, i['Seat Type'], i['Closing Rank'], i.Chances]),
@@ -84,18 +82,6 @@ export default function ResultsTable({ results, hasSearched }) {
   return (
     <div className="glass rounded-3xl p-6 md:p-8 flex flex-col gap-6">
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {['ALL', 'SAFE', 'MODERATE', 'REACH'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${activeTab === tab
-                ? TAB_ACTIVE[tab]
-                : 'text-slate-400 dark:text-white/40 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}>
-              {tab} <span className="font-normal opacity-60 ml-1">({counts[tab]})</span>
-            </button>
-          ))}
-        </div>
 
         {/* Search + Download */}
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
