@@ -122,7 +122,7 @@ function App() {
       )}
 
       {/* Floating Support Button */}
-      <div className="fixed bottom-40 right-6 z-[100] flex flex-col items-end gap-2">
+      <div className="fixed bottom-40 right-6 z-40 flex flex-col items-end gap-2">
         {/* Chat bubble popup */}
         {showBubble && (
           <div className="relative flex items-center gap-3 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl rounded-br-none px-4 py-3 shadow-xl shadow-blue-500/30 max-w-[220px]">
