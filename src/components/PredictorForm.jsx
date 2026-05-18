@@ -73,6 +73,21 @@ export default function PredictorForm({ filters, setFilters, onPredict, isLoadin
         </div>
       </div>
 
+      {/* ── Important Instructions Card ── */}
+      <div className="glass rounded-2xl p-4 mb-4 bg-blue-50/30 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1 h-4 bg-blue-500 rounded-full" />
+          <h2 className="text-slate-800 dark:text-white font-bold text-sm">Important Instructions</h2>
+        </div>
+        <p className="text-slate-600 dark:text-white/80 text-xs font-medium pl-3">
+          {activeTool === 'aktu' 
+            ? 'Predict your chances for AKTU affiliated colleges. Use your JEE Main CRL Rank.' 
+            : activeTool === 'jee-advance'
+            ? 'Predict your chances for IITs. Use your JEE Advance Category Rank.'
+            : 'Predict your chances for NITs, IIITs and GFTIs. Use your JEE Main Category Rank.'}
+        </p>
+      </div>
+
       {/* ── Profile Card ── */}
       <div className="glass rounded-2xl p-4 md:p-6">
         <div className="flex items-center gap-2 mb-5">
@@ -82,7 +97,9 @@ export default function PredictorForm({ filters, setFilters, onPredict, isLoadin
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="flex flex-col gap-2 md:col-span-2 lg:col-span-1">
-          <label htmlFor="rank" className="text-slate-500 dark:text-white/70 text-[10px] font-semibold uppercase tracking-wider">Category Rank</label>
+          <label htmlFor="rank" className="text-slate-500 dark:text-white/70 text-[10px] font-semibold uppercase tracking-wider">
+            {activeTool === 'aktu' ? 'JEE MAIN CRL Rank' : activeTool === 'jee-advance' ? 'JEE Advance Category Rank' : 'Category Rank'}
+          </label>
           <input type="number" id="rank" name="rank"
             className="input-field px-3 py-2.5 rounded-lg font-bold text-base text-center"
             placeholder="e.g. 15000" value={filters.rank} onChange={handleChange} min="1" />
@@ -167,6 +184,10 @@ export default function PredictorForm({ filters, setFilters, onPredict, isLoadin
           </span>
         ) : 'Find My Colleges'}
       </button>
+
+      <p className="text-center text-slate-500 dark:text-white/50 text-xs mt-4">
+        * Prediction Results are based on Previous Year Cutoffs
+      </p>
       </div>
     </>
   );

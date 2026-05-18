@@ -3,7 +3,7 @@ import PredictorForm from './components/PredictorForm';
 import ResultsTable from './components/ResultsTable';
 import { predictColleges } from './utils/predictionLogic';
 import { predictAKTU } from './utils/aktupredictionLogic';
-import { GraduationCap, Sun, Moon, AlertCircle, FileText, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { GraduationCap, Sun, Moon, AlertCircle, FileText, Search, ChevronUp, ChevronDown, Mail, Instagram } from 'lucide-react';
 
 
 
@@ -162,11 +162,19 @@ function App() {
 
             {/* Links */}
             <div className="flex items-center gap-4">
-              <a href="https://github.com/Kartikey9936/rank2college" target="_blank" rel="noopener noreferrer"
-                className="text-slate-400 dark:text-white/30 hover:text-slate-700 dark:hover:text-white transition-colors">
+              <a href="mailto:kartikeykesharwani9936@gmail.com" title="Email Us"
+                className="p-2 rounded-full bg-red-100 text-red-500 hover:bg-red-500 hover:text-white dark:bg-red-500/10 dark:hover:bg-red-500 transition-colors shadow-sm">
+                <Mail className="w-5 h-5" />
+              </a>
+              <a href="https://instagram.com/rank2college" target="_blank" rel="noopener noreferrer" title="Instagram"
+                className="p-2 rounded-full bg-pink-100 text-pink-500 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-500 hover:text-white dark:bg-pink-500/10 transition-colors shadow-sm">
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a href="https://github.com/Kartikey9936/rank2college" target="_blank" rel="noopener noreferrer" title="GitHub"
+                className="p-2 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-800 hover:text-white dark:bg-white/10 dark:text-white/70 dark:hover:bg-white dark:hover:text-slate-900 transition-colors shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
               </a>
-              <span className="text-slate-300 dark:text-white/10 text-xs">© 2025 Rank2College</span>
+              <span className="text-slate-400 dark:text-white/20 text-xs ml-2">© 2025 Rank2College</span>
             </div>
           </div>
         </div>

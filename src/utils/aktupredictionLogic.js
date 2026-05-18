@@ -1,6 +1,6 @@
 // AKTU field names from the JSON:
-// "Institute ▲▼", "Program ▲▼", "Category ▲▼", "Seat Gender ▲▼",
-// "Opening Rank ▲▼", "Closing Rank ▲▼"
+// "Institute", "Program", "Category", "Seat Gender",
+// "Opening Rank", "Closing Rank"
 
 const BRANCH_MAP = {
   CSE: ['computer science', 'cs&e', 'cse', 'information technology', 'it'],
@@ -35,10 +35,10 @@ export const predictAKTU = (data, filters) => {
   const results = [];
 
   data.forEach(item => {
-    const itemCategory = item['Category ▲▼'] || '';
-    const seatGender   = item['Seat Gender ▲▼'] || '';
-    const closingRank  = item['Closing Rank ▲▼'] || '';
-    const program      = item['Program ▲▼'] || '';
+    const itemCategory = item['Category'] || '';
+    const seatGender   = item['Seat Gender'] || '';
+    const closingRank  = item['Closing Rank'] || '';
+    const program      = item['Program'] || '';
 
     // 1. Exact Category match (case-insensitive)
     if (itemCategory.toUpperCase() !== category.toUpperCase()) return;
@@ -53,12 +53,12 @@ export const predictAKTU = (data, filters) => {
     results.push({
       ...item,
       // Normalise field names so ResultsTable can reuse same columns
-      Institute: item['Institute ▲▼'],
-      'Academic Program Name': `${program} (${item['Stream ▲▼'] || ''})`,
-      Quota: item['Quota ▲▼'] || 'Home State',
+      Institute: item['Institute'],
+      'Academic Program Name': `${program} (${item['Stream'] || ''})`,
+      Quota: item['Quota'] || 'Home State',
       'Seat Type': itemCategory,
       Gender: seatGender,
-      'Opening Rank': item['Opening Rank ▲▼'],
+      'Opening Rank': item['Opening Rank'],
       'Closing Rank': closingRank,
       Chances: chances,
     });
