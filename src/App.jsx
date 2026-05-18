@@ -16,6 +16,7 @@ function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [activeTool, setActiveTool] = useState('jee-mains');
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const [filters, setFilters] = useState({
     rank: '', category: 'OPEN', gender: 'Gender-Neutral',
@@ -25,6 +26,18 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Clear results when switching tools to prevent showing stale data
   useEffect(() => {
@@ -107,7 +120,8 @@ function App() {
         {/* Page Hero */}
         <header className="text-center mb-12 animate-fade-slide-up">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">
-            Find Your Best <span className="text-gradient">College Options</span>
+            Find Your Best <span className="text-blue-600">College</span><br />
+            <span className="text-blue-600">Options</span>
           </h1>
         </header>
 
@@ -157,6 +171,17 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 z-50 animate-fade-slide-up flex items-center justify-center"
+          aria-label="Scroll to top"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 }

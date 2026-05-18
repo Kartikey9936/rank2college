@@ -19,6 +19,7 @@ const TAB_ACTIVE = {
 export default function ResultsTable({ results, hasSearched }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'Closing Rank', direction: 'asc' });
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const handleSort = (key) => setSortConfig(prev => ({
     key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
