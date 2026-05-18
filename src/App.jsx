@@ -3,7 +3,8 @@ import PredictorForm from './components/PredictorForm';
 import ResultsTable from './components/ResultsTable';
 import { predictColleges } from './utils/predictionLogic';
 import { predictAKTU } from './utils/aktupredictionLogic';
-import { GraduationCap, Sun, Moon, AlertCircle, FileText, Search, ChevronUp, ChevronDown, Mail, Instagram } from 'lucide-react';
+import { GraduationCap, Sun, Moon, MessageCircle, X, Mail, Instagram, ChevronUp } from 'lucide-react';
+import InstagramPopup from './components/InstagramPopup';
 
 
 
@@ -17,6 +18,9 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [activeTool, setActiveTool] = useState('jee-mains');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showInstaPopup, setShowInstaPopup] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [showBubble, setShowBubble] = useState(true);
 
   const [filters, setFilters] = useState({
     rank: '', category: 'OPEN', gender: 'Gender-Neutral',
@@ -57,6 +61,12 @@ function App() {
   }, []);
 
   const handlePredict = async () => {
+    // If not verified, show popup instead of predicting
+    if (!isVerified) {
+      setShowInstaPopup(true);
+      return;
+    }
+
     if (activeTool !== 'aktu' && !josaaData) return;
 
     setIsPredicting(true);
@@ -103,6 +113,36 @@ function App() {
 
   return (
     <div className="relative min-h-screen flex flex-col">
+      {/* Instagram Popup */}
+      {showInstaPopup && (
+        <InstagramPopup
+          onVerified={() => { setIsVerified(true); setShowInstaPopup(false); }}
+          onClose={() => setShowInstaPopup(false)}
+        />
+      )}
+
+      {/* Floating Support Button */}
+      <div className="fixed bottom-40 right-6 z-[100] flex flex-col items-end gap-2">
+        {/* Chat bubble popup */}
+        {showBubble && (
+          <div className="relative flex items-center gap-3 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl rounded-br-none px-4 py-3 shadow-xl shadow-blue-500/30 max-w-[220px]">
+            {/* Close bubble */}
+            <button onClick={() => setShowBubble(false)} className="absolute -top-2 -right-2 w-5 h-5 bg-slate-700 hover:bg-slate-900 rounded-full flex items-center justify-center transition-colors">
+              <X className="w-3 h-3 text-white" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] text-white/80 leading-tight mb-0.5">Are You Confused In Counselling?</p>
+              <p className="text-sm font-bold leading-tight">Ask with IIT/NIT Experts</p>
+            </div>
+            {/* Bubble tail */}
+            <div className="absolute -bottom-2 right-0 w-0 h-0" style={{ borderLeft: '8px solid transparent', borderTop: '8px solid #7c3aed' }} />
+          </div>
+        )}
+        {/* Main floating button */}
+        <a href="https://t.me/Kartik_nith" target="_blank" rel="noopener noreferrer" title="Ask us on Telegram" onClick={() => setShowBubble(false)} className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-500/40 hover:scale-110 active:scale-95 transition-all">
+          <MessageCircle className="w-7 h-7 text-white" strokeWidth={1.8} />
+        </a>
+      </div>
       {/* Dark mode orbs */}
       {isDark && <>
         <div className="orb w-96 h-96 bg-blue-600/20 top-[-100px] left-[-100px]" />
@@ -121,7 +161,7 @@ function App() {
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <span className="font-black text-xl text-gradient">Rank2College</span>
+                <span className="font-black text-xl text-slate-900 dark:text-white">Rank<span className="text-blue-600">2</span>College</span>
               </div>
             </div>
 
