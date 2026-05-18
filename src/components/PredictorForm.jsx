@@ -109,6 +109,12 @@ export default function PredictorForm({ filters, setFilters, onPredict, isLoadin
           {currentCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </SelectField>
 
+        {activeTool === 'aktu' && (
+          <SelectField id="aktuRound" label="Counselling Round" name="aktuRound" value={filters.aktuRound} onChange={handleChange}>
+            {['1', '2', '3', '4', '6', '7'].map(round => <option key={round} value={round}>Round {round}</option>)}
+          </SelectField>
+        )}
+
         {activeTool !== 'aktu' && (
           <SelectField id="gender" label="Gender" name="gender" value={filters.gender} onChange={handleChange}>
             {GENDERS.map(g => <option key={g} value={g}>{g === 'Gender-Neutral' ? 'Gender-Neutral' : 'Female Only'}</option>)}

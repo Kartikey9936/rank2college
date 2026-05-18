@@ -9,7 +9,7 @@ import { GraduationCap, Sun, Moon, AlertCircle, FileText, Search, ChevronUp, Che
 
 function App() {
   const [josaaData, setJosaaData] = useState(null);
-  const [aktuData, setAktuData] = useState(null);
+  const [aktuData, setAktuData] = useState({});
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isPredicting, setIsPredicting] = useState(false);
   const [results, setResults] = useState([]);
@@ -20,7 +20,8 @@ function App() {
 
   const [filters, setFilters] = useState({
     rank: '', category: 'OPEN', gender: 'Gender-Neutral',
-    quota: 'Both', instituteTypes: ['ALL'], branches: ['ALL'], isPwd: false
+    quota: 'Both', instituteTypes: ['ALL'], branches: ['ALL'], isPwd: false,
+    aktuRound: '1'
   });
 
   useEffect(() => {
@@ -46,32 +47,58 @@ function App() {
   }, [activeTool]);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/josaa_cutoffs.json').then(res => res.json()),
-      fetch('/aktu_cutoffs.json').then(res => res.json())
-    ])
-      .then(([josaa, aktu]) => {
+    fetch('/josaa_cutoffs.json')
+      .then(res => res.json())
+      .then(josaa => {
         setJosaaData(josaa);
-        setAktuData(aktu);
         setIsDataLoading(false);
       })
       .catch(() => setIsDataLoading(false));
   }, []);
 
-  const handlePredict = () => {
+  const handlePredict = async () => {
     if (activeTool !== 'aktu' && !josaaData) return;
-    if (activeTool === 'aktu' && !aktuData) return;
 
     setIsPredicting(true);
-    setTimeout(() => {
-      let predictions = [];
-      if (activeTool === 'aktu') {
-        predictions = predictAKTU(aktuData, filters);
-      } else {
-        predictions = predictColleges(josaaData, filters, activeTool);
+
+    if (activeTool === 'aktu') {
+      const round = filters.aktuRound;
+      let dataForRound = aktuData[round];
+      
+      if (!dataForRound) {
+        try {
+          const res = await fetch(`/aktu_cutoffs_r${round}.json`);
+          const raw = await res.json();
+          // The JSON may be a plain array OR an object with one array-valued key
+          if (Array.isArray(raw)) {
+            dataForRound = raw;
+          } else {
+            // Find the first key whose value is an array
+            const arrayKey = Object.keys(raw).find(k => Array.isArray(raw[k]));
+            dataForRound = arrayKey ? raw[arrayKey] : [];
+          }
+          setAktuData(prev => ({ ...prev, [round]: dataForRound }));
+        } catch (error) {
+          console.error("Failed to load AKTU data for round", round, error);
+          setIsPredicting(false);
+          return;
+        }
       }
-      setResults(predictions); setHasSearched(true); setIsPredicting(false);
-    }, 150);
+
+      setTimeout(() => {
+        const predictions = predictAKTU(dataForRound, filters);
+        setResults(predictions); 
+        setHasSearched(true); 
+        setIsPredicting(false);
+      }, 150);
+    } else {
+      setTimeout(() => {
+        const predictions = predictColleges(josaaData, filters, activeTool);
+        setResults(predictions); 
+        setHasSearched(true); 
+        setIsPredicting(false);
+      }, 150);
+    }
   };
 
   return (
