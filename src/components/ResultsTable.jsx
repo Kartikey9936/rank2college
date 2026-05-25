@@ -3,33 +3,66 @@ import { Search, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const CHANCE_STYLES = {
-  SAFE:     { badge: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30', row: 'hover:bg-emerald-50 dark:hover:bg-emerald-500/5' },
-  MODERATE: { badge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30',   row: 'hover:bg-amber-50 dark:hover:bg-amber-500/5' },
-  REACH:    { badge: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30',           row: 'hover:bg-rose-50 dark:hover:bg-rose-500/5' },
+/* ─── Chance badge styles ──────────────────────────────────────── */
+const CHANCE_CONFIG = {
+  SAFE: {
+    badge: {
+      background: 'rgba(16, 185, 129, 0.15)',
+      border: '1px solid rgba(16, 185, 129, 0.3)',
+      color: 'rgb(52, 211, 153)',
+      boxShadow: '0 0 10px rgba(16, 185, 129, 0.1)',
+    },
+    rowHover: 'rgba(16, 185, 129, 0.04)',
+  },
+  MODERATE: {
+    badge: {
+      background: 'rgba(245, 158, 11, 0.15)',
+      border: '1px solid rgba(245, 158, 11, 0.3)',
+      color: 'rgb(251, 191, 36)',
+      boxShadow: '0 0 10px rgba(245, 158, 11, 0.12)',
+    },
+    rowHover: 'rgba(245, 158, 11, 0.04)',
+  },
+  REACH: {
+    badge: {
+      background: 'rgba(239, 68, 68, 0.12)',
+      border: '1px solid rgba(239, 68, 68, 0.25)',
+      color: 'rgb(252, 165, 165)',
+      boxShadow: '0 0 10px rgba(239, 68, 68, 0.08)',
+    },
+    rowHover: 'rgba(239, 68, 68, 0.03)',
+  },
 };
 
-const TAB_ACTIVE = {
-  ALL:      'text-slate-800 dark:text-white border-slate-300 dark:border-white/30 bg-white dark:bg-white/10',
-  SAFE:     'text-emerald-700 dark:text-emerald-300 border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10',
-  MODERATE: 'text-amber-700 dark:text-amber-300 border-amber-400/40 bg-amber-50 dark:bg-amber-500/10',
-  REACH:    'text-rose-700 dark:text-rose-300 border-rose-400/40 bg-rose-50 dark:bg-rose-500/10',
+const SortIndicator = ({ col, sortConfig }) => {
+  if (sortConfig.key !== col)
+    return <ChevronUp className="w-3 h-3 opacity-20" strokeWidth={1.5} />;
+  return sortConfig.direction === 'asc'
+    ? <ChevronUp className="w-3 h-3" style={{ color: 'var(--accent)' }} strokeWidth={1.5} />
+    : <ChevronDown className="w-3 h-3" style={{ color: 'var(--accent)' }} strokeWidth={1.5} />;
 };
 
 export default function ResultsTable({ results, hasSearched }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: 'Closing Rank', direction: 'asc' });
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [sortConfig, setSortConfig]     = useState({ key: 'Closing Rank', direction: 'asc' });
+  const [hoveredRow, setHoveredRow]     = useState(null);
   const [visibleCount, setVisibleCount] = useState(10);
 
-  const handleSort = (key) => setSortConfig(prev => ({
-    key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-  }));
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+    setVisibleCount(10);
+  };
 
   const filtered = useMemo(() => {
     let data = [...results];
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      data = data.filter(i => i.Institute.toLowerCase().includes(q) || i['Academic Program Name'].toLowerCase().includes(q));
+      data = data.filter(i =>
+        i.Institute.toLowerCase().includes(q) ||
+        i['Academic Program Name'].toLowerCase().includes(q)
+      );
     }
     data.sort((a, b) => {
       let av = a[sortConfig.key], bv = b[sortConfig.key];
@@ -44,98 +77,274 @@ export default function ResultsTable({ results, hasSearched }) {
   const downloadPDF = () => {
     if (!filtered.length) return;
     const doc = new jsPDF();
-    doc.setFontSize(20); doc.setTextColor(37, 99, 235);
-    doc.text('Rank2College.com Priority List', 14, 22);
-    doc.setFontSize(10); doc.setTextColor(100, 116, 139);
+    doc.setFontSize(18);
+    doc.setTextColor(245, 158, 11);
+    doc.text('Rank2College.com — College Priority List', 14, 20);
+    doc.setFontSize(9);
+    doc.setTextColor(113, 113, 122);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
 
     autoTable(doc, {
       head: [['Institute', 'Branch', 'Quota', 'Category', 'Closing Rank', 'Chances']],
-      body: filtered.map(i => [i.Institute, i['Academic Program Name'].split('(')[0].trim(), i.Quota, i['Seat Type'], i['Closing Rank'], i.Chances]),
-      startY: 37,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 0: { cellWidth: 55 }, 1: { cellWidth: 50 } },
+      body: filtered.map(i => [
+        i.Institute,
+        i['Academic Program Name'].split('(')[0].trim(),
+        i.Quota,
+        i['Seat Type'],
+        i['Closing Rank'],
+        i.Chances,
+      ]),
+      startY: 34,
+      styles: { fontSize: 7.5, cellPadding: 3, textColor: [10, 10, 15], font: 'helvetica' },
+      headStyles: { fillColor: [245, 158, 11], textColor: [10, 10, 15], fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [248, 248, 252] },
+      columnStyles: { 0: { cellWidth: 52 }, 1: { cellWidth: 50 } },
     });
-    doc.save('College_Priority_List.pdf');
+    doc.save('Rank2College_List.pdf');
   };
 
-  const counts = { ALL: results.length, SAFE: results.filter(r => r.Chances === 'SAFE').length, MODERATE: results.filter(r => r.Chances === 'MODERATE').length, REACH: results.filter(r => r.Chances === 'REACH').length };
+  const counts = {
+    ALL:      results.length,
+    SAFE:     results.filter(r => r.Chances === 'SAFE').length,
+    MODERATE: results.filter(r => r.Chances === 'MODERATE').length,
+    REACH:    results.filter(r => r.Chances === 'REACH').length,
+  };
 
-  const SortIcon = ({ col }) => sortConfig.key !== col
-    ? <ChevronUp className="w-3.5 h-3.5 opacity-20" />
-    : sortConfig.direction === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />;
-
+  /* ── Empty / not-searched state ── */
   if (!hasSearched) {
     return (
-      <div className="glass rounded-3xl flex flex-col items-center justify-center p-16 text-center min-h-[360px]">
-        <div className="w-20 h-20 rounded-3xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center mb-5">
-          <Search className="w-9 h-9 text-slate-300 dark:text-white/30" />
+      <div
+        className="glass rounded-2xl flex flex-col items-center justify-center p-16 text-center"
+        style={{ minHeight: '320px', borderRadius: 'var(--radius-xl)' }}
+      >
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+          style={{
+            background: 'rgba(245,158,11,0.06)',
+            border: '1px solid rgba(245,158,11,0.15)',
+          }}
+        >
+          <Search className="w-7 h-7" style={{ color: 'rgba(245,158,11,0.5)' }} strokeWidth={1.5} />
         </div>
-        <h3 className="text-xl font-bold text-slate-700 dark:text-white mb-2">Ready to Predict</h3>
-        <p className="text-slate-400 dark:text-white/40 max-w-sm text-sm leading-relaxed">
-          Fill in your details above and click <span className="text-slate-600 dark:text-white/70 font-medium">Find My Colleges</span> to see your personalised predictions.
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 600,
+            fontSize: '1.1rem',
+            color: 'var(--fg)',
+            marginBottom: '0.5rem',
+          }}
+        >
+          Ready to Predict
+        </h3>
+        <p style={{ color: 'var(--muted-fg)', fontSize: '0.85rem', maxWidth: '300px', lineHeight: 1.6 }}>
+          Fill in your profile above and click{' '}
+          <span style={{ color: 'var(--accent)' }}>Find My Colleges</span> to see personalised predictions.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-3xl p-6 md:p-8 flex flex-col gap-6">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+    <div
+      className="glass rounded-2xl p-5 md:p-7 flex flex-col gap-5 animate-fade-up"
+      style={{ borderRadius: 'var(--radius-xl)' }}
+    >
+      {/* ── Header: stats + search + download ── */}
+      <div className="flex flex-col gap-4">
+
+        {/* Summary pills */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'Total',    count: counts.ALL,      color: 'var(--muted-fg)', bg: 'rgba(255,255,255,0.04)', border: 'var(--border)' },
+            { label: 'Safe',     count: counts.SAFE,     color: 'rgb(52,211,153)',  bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)' },
+            { label: 'Moderate', count: counts.MODERATE, color: 'rgb(251,191,36)',  bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' },
+            { label: 'Reach',    count: counts.REACH,    color: 'rgb(252,165,165)', bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)' },
+          ].map(({ label, count, color, bg, border }) => (
+            <div
+              key={label}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+              style={{ background: bg, border: `1px solid ${border}` }}
+            >
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.9rem', color }}>{count}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.06em', color: 'var(--muted-fg)' }}>
+                {label.toUpperCase()}
+              </span>
+            </div>
+          ))}
+        </div>
 
         {/* Search + Download */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-          <div className="relative flex-grow sm:min-w-[280px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/30" />
-            <input type="text" placeholder="Search college or branch..."
-              className="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-sm"
-              value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-grow">
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+              style={{ color: 'var(--muted-fg)' }}
+              strokeWidth={1.5}
+            />
+            <input
+              type="text"
+              placeholder="Search college or branch…"
+              className="input-field w-full pl-10 pr-4"
+              style={{ fontSize: '0.875rem' }}
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setVisibleCount(10); }}
+            />
           </div>
-          <button className="btn-primary flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white whitespace-nowrap" onClick={downloadPDF}>
-            <FileText className="w-4 h-4" /> Download PDF
+          <button
+            className="btn-outline flex items-center justify-center gap-2 px-5 text-sm whitespace-nowrap"
+            style={{ height: '2.75rem' }}
+            onClick={downloadPDF}
+          >
+            <FileText className="w-4 h-4" strokeWidth={1.5} />
+            Download PDF
           </button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* ── Table ── */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-slate-400 dark:text-white/50">No colleges match this filter.</p>
-          <button onClick={() => { setSearchQuery(''); setActiveTab('ALL'); }} className="mt-3 text-blue-500 text-sm hover:underline">Clear filters</button>
+        <div className="flex flex-col items-center justify-center py-14 text-center">
+          <p style={{ color: 'var(--muted-fg)', fontSize: '0.875rem' }}>No colleges match your search.</p>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="mt-3 text-sm transition-colors"
+            style={{ color: 'var(--accent)', fontFamily: 'var(--font-body)' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#FBBF24'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--accent)'}
+          >
+            Clear search
+          </button>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10">
-          <table className="w-full text-left text-sm">
+        <div
+          className="overflow-x-auto rounded-xl"
+          style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}
+        >
+          <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+              <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(26,26,36,0.8)' }}>
                 {[
-                  { label: 'Institute', key: 'Institute' },
-                  { label: 'Branch', key: 'Academic Program Name' },
-                  { label: 'Quota', key: null },
-                  { label: 'Category', key: null },
-                  { label: 'Closing Rank', key: 'Closing Rank' },
-                  { label: 'Chances', key: null },
+                  { label: 'Institute',     key: 'Institute' },
+                  { label: 'Branch',        key: 'Academic Program Name' },
+                  { label: 'Quota',         key: null },
+                  { label: 'Category',      key: null },
+                  { label: 'Closing Rank',  key: 'Closing Rank' },
+                  { label: 'Chances',       key: null },
                 ].map(({ label, key }) => (
-                  <th key={label} onClick={key ? () => handleSort(key) : undefined}
-                    className={`px-5 py-4 text-slate-500 dark:text-white/50 font-semibold text-xs uppercase tracking-wider whitespace-nowrap ${key ? 'cursor-pointer hover:text-slate-700 dark:hover:text-white/80 transition-colors' : ''}`}>
-                    <div className="flex items-center gap-1.5">{label}{key && <SortIcon col={key} />}</div>
+                  <th
+                    key={label}
+                    onClick={key ? () => handleSort(key) : undefined}
+                    style={{
+                      padding: '14px 18px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.65rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      color: 'var(--muted-fg)',
+                      whiteSpace: 'nowrap',
+                      cursor: key ? 'pointer' : 'default',
+                      userSelect: 'none',
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {label}
+                      {key && <SortIndicator col={key} sortConfig={sortConfig} />}
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item, i) => {
-                const s = CHANCE_STYLES[item.Chances] || {};
+              {filtered.slice(0, visibleCount).map((item, i) => {
+                const cfg = CHANCE_CONFIG[item.Chances] || CHANCE_CONFIG.REACH;
+                const isHovered = hoveredRow === i;
                 return (
-                  <tr key={`${item.Institute}-${i}`} className={`border-b border-slate-100 dark:border-white/5 transition-colors ${s.row} last:border-0`}>
-                    <td className="px-5 py-4 font-medium text-slate-800 dark:text-white whitespace-normal min-w-[240px] leading-snug">{item.Institute}</td>
-                    <td className="px-5 py-4 text-slate-600 dark:text-white/70 whitespace-normal min-w-[220px] leading-snug">{item['Academic Program Name'].split('(')[0].trim()}</td>
-                    <td className="px-5 py-4 text-slate-500 dark:text-white/60 whitespace-nowrap">{item.Quota}</td>
-                    <td className="px-5 py-4 text-slate-500 dark:text-white/60 whitespace-nowrap">{item['Seat Type']}</td>
-                    <td className="px-5 py-4 font-bold text-slate-800 dark:text-white whitespace-nowrap tabular-nums">{item['Closing Rank']}</td>
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${s.badge}`}>{item.Chances}</span>
+                  <tr
+                    key={`${item.Institute}-${i}`}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    style={{
+                      borderBottom: i < Math.min(visibleCount, filtered.length) - 1 ? '1px solid var(--border)' : 'none',
+                      background: isHovered ? cfg.rowHover : 'transparent',
+                      transition: 'background 200ms ease-out',
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '14px 18px',
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                        color: 'var(--fg)',
+                        minWidth: '220px',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {item.Institute}
+                    </td>
+                    <td
+                      style={{
+                        padding: '14px 18px',
+                        fontSize: '0.82rem',
+                        color: 'rgba(250,250,250,0.7)',
+                        minWidth: '200px',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {item['Academic Program Name'].split('(')[0].trim()}
+                    </td>
+                    <td
+                      style={{
+                        padding: '14px 18px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.75rem',
+                        color: 'var(--muted-fg)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {item.Quota}
+                    </td>
+                    <td
+                      style={{
+                        padding: '14px 18px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.75rem',
+                        color: 'var(--muted-fg)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {item['Seat Type']}
+                    </td>
+                    <td
+                      style={{
+                        padding: '14px 18px',
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        color: 'var(--fg)',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {item['Closing Rank']}
+                    </td>
+                    <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                      <span
+                        style={{
+                          ...cfg.badge,
+                          display: 'inline-block',
+                          padding: '3px 10px',
+                          borderRadius: '9999px',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          letterSpacing: '0.07em',
+                        }}
+                      >
+                        {item.Chances}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -143,6 +352,52 @@ export default function ResultsTable({ results, hasSearched }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ── Load More ── */}
+      {filtered.length > visibleCount && (
+        <div className="flex flex-col items-center gap-3 pt-2">
+          {/* Progress bar */}
+          <div
+            className="w-full rounded-full overflow-hidden"
+            style={{ height: '2px', background: 'var(--border)' }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min((visibleCount / filtered.length) * 100, 100)}%`,
+                background: 'var(--accent)',
+                borderRadius: '9999px',
+                transition: 'width 400ms ease-out',
+                boxShadow: 'var(--glow-sm)',
+              }}
+            />
+          </div>
+
+          {/* Count label */}
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: 'var(--muted-fg)', letterSpacing: '0.05em' }}>
+            SHOWING {Math.min(visibleCount, filtered.length)} OF {filtered.length} COLLEGES
+          </p>
+
+          {/* Load more button */}
+          <button
+            onClick={() => setVisibleCount(prev => prev + 10)}
+            className="btn-outline flex items-center gap-2 px-6 py-2.5 text-sm"
+            style={{ borderRadius: 'var(--radius-lg)' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
+            Load More
+          </button>
+        </div>
+      )}
+
+      {/* All loaded indicator */}
+      {filtered.length > 0 && filtered.length <= visibleCount && filtered.length > 10 && (
+        <p className="text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: 'var(--muted-fg)', letterSpacing: '0.05em' }}>
+          ✓ ALL {filtered.length} COLLEGES LOADED
+        </p>
       )}
     </div>
   );
